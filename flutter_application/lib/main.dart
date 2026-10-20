@@ -1,6 +1,19 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:openapi/api.dart';
 
-void main() => runApp(const MyApp());
+void main() {
+  // Erzeugt ein Objekt vom Typ ApiClient mit der URL des lokalen Servers
+  final apiClient = ApiClient(basePath: 'http://localhost:8080');
+
+  runApp(
+    // Erweitert den Widget-Baum um ein Provider-Widget
+    Provider<ApiClient>.value(
+      value: apiClient,
+      child: const MyApp(),
+    ),
+  );
+}
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
@@ -25,13 +38,36 @@ class ChatScreen extends StatefulWidget {
 
 class _ChatScreenState extends State<ChatScreen> {
   final TextEditingController _controller = TextEditingController();
-  String _aiResponse = "Die Antwort von ChatGPT wird hier angezeigt."; // Text widget display
+  String _aiResponse = "Die Antwort von ChatGPT wird hier angezeigt.";
 
-  void _askAI() {
-    // This method will later send the request to your server
+  Future<void> _askAI() async {
+    final apiClient = Provider.of<ApiClient>(context, listen: false);
+    final apiInstance = DefaultApi(apiClient);
+
+    // Erzeugt ein Message-Objekt
+    final message = Message(
+      timestamp: DateTime.now(),
+      message: _controller.text,
+      author: 'user', 
+    );
+
     setState(() {
-      _aiResponse = "Anfrage wird gesendet: ${_controller.text}";
+      _aiResponse = "Warte auf Antwort vom Server...";
     });
+
+    try {
+      // Ruft die REST-Operation über den ApiClient auf
+      final result = await apiInstance.chat(message);
+      
+      setState(() {
+        // Zeigt die Antwort des Servers in der UI an
+        _aiResponse = result?.message ?? "Keine Nachricht empfangen.";
+      });
+    } catch (e) {
+      setState(() {
+        _aiResponse = "Fehler bei der Anfrage: $e";
+      });
+    }
   }
 
   @override
