@@ -48,7 +48,7 @@ class _ChatScreenState extends State<ChatScreen> {
     final message = Message(
       timestamp: DateTime.now(),
       message: _controller.text,
-      author: 'user', 
+      author: MessageAuthorEnum.user, 
     );
 
     setState(() {
