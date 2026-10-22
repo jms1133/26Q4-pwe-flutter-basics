@@ -1,21 +1,31 @@
-# Use latest stable channel SDK.
 FROM dart:stable AS build
 
-# Resolve app dependencies.
 WORKDIR /app
-COPY pubspec.* ./
+
+# 1. Quellcode von openapi kopieren
+COPY openapi/ ./openapi/
+
+# 2. pubspec-Dateien von server_app kopieren
+COPY server_app/pubspec.* ./server_app/
+
+# 3. In das server_app Verzeichnis wechseln und Abhängigkeiten auflösen
+WORKDIR /app/server_app
 RUN dart pub get
 
-# Copy app source code (except anything in .dockerignore) and AOT compile app.
-COPY . .
-RUN dart build cli --target bin/server.dart -o output
+# 4. Restlichen Quellcode von server_app kopieren
+COPY server_app/ .
 
-# Build minimal serving image from AOT-compiled `/server`
-# and the pre-built AOT-runtime in the `/runtime/` directory of the base image.
+# 5. Lokalen Mac-Cache löschen & Abhängigkeiten im Container sauber auflösen
+RUN rm -rf .dart_tool
+RUN dart pub get
+
+# 6. AOT-Kompilierung ausführen
+RUN dart compile exe bin/server.dart -o bin/server
+
+# Minimales Production-Image
 FROM scratch
 COPY --from=build /runtime/ /
-COPY --from=build /app/output/bundle/ /app/
+COPY --from=build /app/server_app/bin/server /app/bin/server
 
-# Start server.
-EXPOSE 8080
+EXPOSE 8081
 CMD ["/app/bin/server"]

@@ -10,7 +10,7 @@ dependencies:
   shelf: ^1.4.2
   shelf_router: ^1.1.2
   args: ^2.4.0
-  chat_gpt_sdk: 3.0.4
+  chat_gpt_sdk: ^3.1.6
   http: ^1.2.2
   openapi:
     path: ../openapi
